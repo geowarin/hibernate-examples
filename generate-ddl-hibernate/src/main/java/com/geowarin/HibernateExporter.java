@@ -1,8 +1,8 @@
 package com.geowarin;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 
@@ -58,9 +58,11 @@ public class HibernateExporter {
 		}
 	}
 
-	public void export(File exportFile) throws FileNotFoundException {
+	public void export(File exportFile) throws IOException {
 		
-		export(new FileOutputStream(exportFile), generateCreateQueries, generateDropQueries);
+		try (FileOutputStream out = new FileOutputStream(exportFile)) {
+			export(out, generateCreateQueries, generateDropQueries);
+		}
 	}
 	
 	public void exportToConsole() {
