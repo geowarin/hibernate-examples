@@ -1,8 +1,8 @@
 package com.geowarin;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 
@@ -48,21 +48,22 @@ public class HibernateExporter {
 	public void export(OutputStream out, boolean generateCreateQueries, boolean generateDropQueries) {
 		
 		Dialect hibDialect = Dialect.getDialect(hibernateConfiguration.getProperties());
-		if (generateCreateQueries) {
-			String[] createSQL = hibernateConfiguration.generateSchemaCreationScript(hibDialect);
-			write(out, createSQL, FormatStyle.DDL.getFormatter());
-		}
-		if (generateDropQueries) {
-			String[] dropSQL = hibernateConfiguration.generateDropSchemaScript(hibDialect);
-			write(out, dropSQL, FormatStyle.DDL.getFormatter());
+		try (PrintWriter writer = new PrintWriter(out)) {
+			
+			if (generateCreateQueries) {
+				String[] createSQL = hibernateConfiguration.generateSchemaCreationScript(hibDialect);
+				write(writer, createSQL, FormatStyle.DDL.getFormatter());
+			}
+			if (generateDropQueries) {
+				String[] dropSQL = hibernateConfiguration.generateDropSchemaScript(hibDialect);
+				write(writer, dropSQL, FormatStyle.DDL.getFormatter());
+			}
 		}
 	}
 
-	public void export(File exportFile) throws IOException {
+	public void export(File exportFile) throws FileNotFoundException {
 		
-		try (FileOutputStream out = new FileOutputStream(exportFile)) {
-			export(out, generateCreateQueries, generateDropQueries);
-		}
+		export(new FileOutputStream(exportFile), generateCreateQueries, generateDropQueries);
 	}
 	
 	public void exportToConsole() {
@@ -70,13 +71,10 @@ public class HibernateExporter {
 		export(System.out, generateCreateQueries, generateDropQueries);
 	}
 	
-	private void write(OutputStream out, String[] lines, Formatter formatter) {
+	private void write(PrintWriter writer, String[] lines, Formatter formatter) {
 		
-		try (PrintWriter writer = new PrintWriter(out)) {
-			
-			for (String string : lines)
-				writer.println(formatter.format(string) + ";");
-		}
+		for (String string : lines)
+			writer.println(formatter.format(string) + ";");
 	}
 
 	private Configuration createHibernateConfig() {
@@ -94,5 +92,21 @@ public class HibernateExporter {
 		}
 		hibernateConfiguration.setProperty(AvailableSettings.DIALECT, dialect);
 		return hibernateConfiguration;
+	}
+
+	public boolean isGenerateDropQueries() {
+		return generateDropQueries;
+	}
+
+	public void setGenerateDropQueries(boolean generateDropQueries) {
+		this.generateDropQueries = generateDropQueries;
+	}
+
+	public Configuration getHibernateConfiguration() {
+		return hibernateConfiguration;
+	}
+
+	public void setHibernateConfiguration(Configuration hibernateConfiguration) {
+		this.hibernateConfiguration = hibernateConfiguration;
 	}
 }
